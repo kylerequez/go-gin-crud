@@ -10,6 +10,45 @@ import (
 	"github.com/kylerequez/go-gin-api/services"
 )
 
+func RegistrationHandler(c *gin.Context) {
+	fmt.Println(":::-:::\tREGISTRATION HANDLER\t:::-:::")
+	var body struct {
+		Name  string
+		Email string
+		Age   uint8
+	}
+
+	c.Bind(&body)
+
+	name := body.Name
+	email := body.Email
+	var age uint8 = body.Age
+
+	if name == "" || email == "" || age <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Error",
+			"error":   "The form is incomplete. Please fill out all the necessary information",
+		})
+		return
+	}
+
+	user := models.User{Name: name, Email: &email, Age: &age}
+	result := initializers.DB.Create(&user)
+
+	if result.Error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Error",
+			"error":   result.Error,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Success",
+		"user":    user,
+	})
+}
+
 func LoginHandler(c *gin.Context) {
 	fmt.Println(":::-:::\tLOGIN HANDLER\t:::-:::")
 	var body struct {
@@ -23,6 +62,7 @@ func LoginHandler(c *gin.Context) {
 			"message": "Error",
 			"error":   "You have entered an incorrect email",
 		})
+		return
 	}
 
 	var user models.User
@@ -49,6 +89,7 @@ func LoginHandler(c *gin.Context) {
 			"message": "Error",
 			"error":   "There was an error in generating your authentication token",
 		})
+		return
 	}
 
 	c.SetCookie("go-gin-crud-token", tokenString, 3600, "/", "localhost", false, true)
